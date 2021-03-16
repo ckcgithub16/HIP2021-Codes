@@ -103,6 +103,9 @@ public class VentiMachine implements Runnable {
 
     //Aid in clearing message box
     boolean clearErrorMessage = false;
+    
+    
+    String lastMessage;
 
     //Code that establishes the 10 states
     enum VentState {
@@ -346,28 +349,35 @@ public class VentiMachine implements Runnable {
         
         //Error Messages displayed in the message Box of the GUI
         if(VentState.FAULT1 == iAutoState) {
-            vgl.notifyMessageBox("The tank pressure is too low. Close the bleed valve.\n");
+            notifyMessageBox("The tank pressure is too low. Close the bleed valve.\n");
         }
         else if(VentState.FAULT2 == iAutoState){
-            vgl.notifyMessageBox("The PIP is too low.\n");
+            notifyMessageBox("The PIP is too low.\n");
         }
         //Error messages for the ventilator in FAULT 3 state
         else if(VentState.FAULT3 == iAutoState) {
             if(lungPressure > maxPEEP) {
-            vgl.notifyMessageBox("The PEEP is too high.\n");
+                notifyMessageBox("The PEEP is too high.\n");
             }
             if(tankPressure < targetTankPressure) {
-                vgl.notifyMessageBox("The tank pressure is too low. Close the bleed valve.\n");
+                notifyMessageBox("The tank pressure is too low. Close the bleed valve.\n");
             }
         }
         //Loading ". . ." to signify there are no current messages
         else{
             if(clearErrorMessage) {
-                vgl.notifyMessageBox(" . . .\n");
+               notifyMessageBox(" . . .\n");
             }
         }
      }
     
+    
+    void notifyMessageBox(String s) {
+        if (!s.equals(lastMessage)) {
+            vgl.notifyMessageBox(s);
+            lastMessage = s;
+        }
+    }
        
     //Code for determining inhale and exhale & tank refill state times
     public void calcStateTime() {
