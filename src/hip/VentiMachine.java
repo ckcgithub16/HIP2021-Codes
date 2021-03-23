@@ -150,7 +150,7 @@ public class VentiMachine implements Runnable {
         ses = Executors.newSingleThreadScheduledExecutor();
         
         //Experiment with different values and document
-        sf = ses.scheduleAtFixedRate(this, 0, 10, TimeUnit.MILLISECONDS);
+        sf = ses.scheduleAtFixedRate(this, 0, 25, TimeUnit.MILLISECONDS);
     }
    
     /*Replace letters with new names as described in class variables (DONE)
