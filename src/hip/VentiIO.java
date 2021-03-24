@@ -12,7 +12,7 @@ import java.util.EnumMap;
  * @author lee
  */
 public class VentiIO {
-    private final EnumMap<ValveEnum, Boolean> emValves;
+    private final EnumMap<ValveEnum, IOValve> emValves;
     private final EnumMap<PressureEnum, Float> emPressureSensors;
     
     enum ValveEnum {
@@ -29,15 +29,15 @@ public class VentiIO {
     public static void main(String[] ss) {
         VentiIO vio = new VentiIO();
         vio.openValve(ValveEnum.VALVE2);
-        boolean bo1 = vio.getState(ValveEnum.VALVE1);
-        boolean bo2 = vio.getState(ValveEnum.VALVE2);
-        boolean bo3 = vio.getState(ValveEnum.VALVE3);
+        vio.getState(ValveEnum.VALVE1);
+        vio.getState(ValveEnum.VALVE2);
+        vio.getState(ValveEnum.VALVE3);
     }
     
     VentiIO() {
         emValves = new EnumMap(ValveEnum.class);
         for(ValveEnum ve : ValveEnum.values()) {
-            emValves.put(ve, Boolean.FALSE);
+            emValves.put(ve, new IOValve());
         }
         emPressureSensors = new EnumMap(PressureEnum.class);
         for(PressureEnum pe : PressureEnum.values()) {
@@ -46,19 +46,33 @@ public class VentiIO {
     }
     
     void openValve(ValveEnum ve) {
-        emValves.put(ve, Boolean.TRUE);
+        setState(ve, true);
     }
     
     void closeValve(ValveEnum ve) {
-        emValves.put(ve, Boolean.FALSE);
+        setState(ve, false);
     }
 
     void setState(ValveEnum ve, boolean bo) {
-        emValves.put(ve, bo);
+        IOValve iov = emValves.get(ve);
+        iov.setState(bo);
     }
     
     boolean getState(ValveEnum ve) {
-        return emValves.get(ve);
+        IOValve iov = emValves.get(ve);
+        return iov.boState;
+    }
+    
+    class IOValve {
+        boolean boState;
+        
+        IOValve() {
+            boState = false;
+        }
+        
+        void setState(boolean bo) {
+            boState = bo;
+        }
     }
     
     int readPressureCount(PressureEnum pe) throws Exception {

@@ -11,8 +11,9 @@ import javax.swing.SwingUtilities;
  *
  * @author lee
  */
-public class VentilatorGUI extends javax.swing.JFrame implements VentilatorGUIListener {
+public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineListener {
     VentiMachine vm;
+    VentiUserListener vul;
 
     /**
      * Creates new form HelloWorldJFrame
@@ -21,12 +22,13 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentilatorGUILi
         initComponents();
         try {
             vm = new VentiMachine(this);
+            vul = vm;
+            vm.start();
         }
         catch (Exception e) {
             SwingUtilities.invokeLater(()->jlP1Count.setText("Error"));
             System.err.println("SPI Error");
         }
-
     }
 
     /**
@@ -569,89 +571,101 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentilatorGUILi
     }// </editor-fold>//GEN-END:initComponents
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
-        vm.shutdown();
+        vul.shutdown();
     }//GEN-LAST:event_formWindowClosing
 
     private void jrbRunActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jrbRunActionPerformed
-        vm.runAuto();
+        vul.runAuto();
+
     }//GEN-LAST:event_jrbRunActionPerformed
 
     private void jrbStopActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jrbStopActionPerformed
-        vm.stopAuto();
+        vul.stopAuto();
     }//GEN-LAST:event_jrbStopActionPerformed
 
     private void jRadioButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButton1ActionPerformed
-        vm.enableLogger();
+        vul.enableLogger();
     }//GEN-LAST:event_jRadioButton1ActionPerformed
 
     private void jRadioButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButton2ActionPerformed
-        vm.disableLogger();
+        vul.disableLogger();
     }//GEN-LAST:event_jRadioButton2ActionPerformed
 
     private void jrbV3CloseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jrbV3CloseActionPerformed
-        vm.shutV3();
+        vul.shutV3();
     }//GEN-LAST:event_jrbV3CloseActionPerformed
 
     private void jrbV3OpenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jrbV3OpenActionPerformed
-        vm.openV3();
+        vul.openV3();
     }//GEN-LAST:event_jrbV3OpenActionPerformed
 
     private void jrbV2CloseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jrbV2CloseActionPerformed
-        vm.shutV2();
+        vul.shutV2();
     }//GEN-LAST:event_jrbV2CloseActionPerformed
 
     private void jrbV2OpenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jrbV2OpenActionPerformed
-        vm.openV2();
+        vul.openV2();
     }//GEN-LAST:event_jrbV2OpenActionPerformed
 
     private void jrbV1CloseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jrbV1CloseActionPerformed
-        vm.shutV1();
+        vul.shutV1();
     }//GEN-LAST:event_jrbV1CloseActionPerformed
 
     private void jrbV1OpenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jrbV1OpenActionPerformed
-        vm.openV1();
+        vul.openV1();
     }//GEN-LAST:event_jrbV1OpenActionPerformed
 
     private void peepMinusBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_peepMinusBtnActionPerformed
+        // TODO just call minusPEEP over interface
+        // move calculations to VentiMachine functions
+        // TODO don't refer to vm
+        // TODO e.g. vul.minusPEEP()
         minusPEEP();
-        vm.calcMaxPEEP();        
+        vm.calcMaxPEEP(); // TODO move to VentiMachine
     }//GEN-LAST:event_peepMinusBtnActionPerformed
 
     private void peepPlusBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_peepPlusBtnActionPerformed
+        // TODO
         addPEEP();
         vm.calcMaxPEEP();
     }//GEN-LAST:event_peepPlusBtnActionPerformed
 
     private void pipPlusBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pipPlusBtnActionPerformed
+        // TODO
         addPIP();
-        vm.calculateTankPressure();
-        vm.calcMinPIP();
+        vm.calculateTankPressure(); // TODO move to VentiMachine
+        vm.calcMinPIP(); // TODO move to VentiMachine
     }//GEN-LAST:event_pipPlusBtnActionPerformed
 
     private void tvMinusBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tvMinusBtnActionPerformed
+        // TODO
         minusTidalVolume();
-        vm.calculateTankPressure();
+        vm.calculateTankPressure(); // TODO move to VentiMachine
     }//GEN-LAST:event_tvMinusBtnActionPerformed
 
     private void rpmPlusBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rpmPlusBtnActionPerformed
+        // TODO
         addRPM();
-        vm.calcStateTime();
+        vm.calcStateTime(); // TODO move to VentiMachine
     }//GEN-LAST:event_rpmPlusBtnActionPerformed
 
     private void pipMinusBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pipMinusBtnActionPerformed
+        // TODO
         minusPIP();
-        vm.calculateTankPressure();
-        vm.calcMinPIP();
+        vm.calculateTankPressure(); // TODO move to VentiMachine
+        vm.calcMinPIP(); // TODO move to VentiMachine
     }//GEN-LAST:event_pipMinusBtnActionPerformed
 
     private void rpmMinusBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rpmMinusBtnActionPerformed
+        // TODO
         minusRPM();
-        vm.calcStateTime();
+        vm.calcStateTime(); // TODO move to VentiMachine
     }//GEN-LAST:event_rpmMinusBtnActionPerformed
 
     private void tvPlusBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tvPlusBtnActionPerformed
+        // TODO
         addTidalVolume();
-        vm.calculateTankPressure();
+        vm.calculateTankPressure(); // TODO move to VentiMachine
     }//GEN-LAST:event_tvPlusBtnActionPerformed
 
     //Tank pressure
@@ -660,20 +674,10 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentilatorGUILi
         SwingUtilities.invokeLater(() -> jlP2Count2.setText(s));
     }
     
-    @Override
-    public void notifyP1(float f) {
-        notifyP1(String.format("%.2f", f));
-    }
-    
     //Lung pressure
     @Override
     public void notifyP2(String s) {
         SwingUtilities.invokeLater(() -> jlP1Count.setText(s));
-    }
-    
-    @Override
-    public void notifyP2(float f) {
-        notifyP2(String.format("%.2f", f));
     }
     
     /*
@@ -698,48 +702,58 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentilatorGUILi
     }
     
     //Checks if PEEP has reached max, adds 0.5 cm H20 if it hasn't, converts PEEP to a string, and displays it on GUI
+    // TODO move addPEEP to VentiUserListener interface
+    // TODO add notifyPEEP to VentiMachineListener interface
+    // TODO e.g. rework this addPEEP into notifyPEEP -> invokeLater () -> jlP2Count1.setText
     @Override
     public void addPEEP() {
         jlP2Count1.setText(vm.addPEEP());
     }
     
     //Checks if PIP has reached max, adds 1.0 cm H20 if it hasn't, converts PIP to a string, and displays it on GUI
+    // TODO
     @Override
     public void addPIP() {
         jlP2Count4.setText(vm.addPIP());
     }
     
     //Checks if RPM has reached max, adds 1.0/min if it hasn't, converts RPM to a string, and displays it on GUI
+    // TODO
     @Override
     public void addRPM() {
         jlP2Count3.setText(vm.addRPM());   
     }
     
     //Checks if TV has reached max, adds 25 cc if it hasn't, converts TV to a string, and displays it on GUI
+    // TODO
     @Override
     public void addTidalVolume() {
         jlP2Count5.setText(vm.addTidalVolume());    
     }
     
     //Checks if PEEP has reached min, subtracts 0.5 cm H20 if it hasn't, converts PEEP to a string, and displays it on GUI
+    // TODO
     @Override
     public void minusPEEP() {
        jlP2Count1.setText(vm.minusPEEP());
     }
     
     //Checks if PIP has reached min, subtracts 1.0 cm H20 if it hasn't, converts PIP to a string, and displays it on GUI
+    // TODO
     @Override
     public void minusPIP() {
         jlP2Count4.setText(vm.minusPIP());
     }
     
     //Checks if RPM has reached min, subtracts 1.0/min if it hasn't, converts RPM to a string, and displays it on GUI
+    // TODO
     @Override
     public void minusRPM() {
         jlP2Count3.setText(vm.minusRPM());
     }
     
     //Checks if TV has reached min, subtracts 25 cc if it hasn't, converts TV to a string, and displays it on GUI
+    // TODO
     @Override
     public void minusTidalVolume() {
         jlP2Count5.setText(vm.minusTidalVolume());
@@ -748,7 +762,8 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentilatorGUILi
     
     //Ask Mr. Bruner how to work around this: get rid of elements on GUI causes error for these methods. Need something different.
     @Override
-    public void notifyValvesEnabled(boolean bo) {
+    public void notifyValvesEnabled(String s) {
+        boolean bo = Boolean.parseBoolean(s);
         SwingUtilities.invokeLater(() -> {
                     jrbV1Open.setEnabled(bo);
                     jrbV1Close.setEnabled(bo);
@@ -760,7 +775,8 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentilatorGUILi
     }
     
     @Override
-    public void notifyV1State(boolean bo) {
+    public void notifyV1State(String s) {
+        boolean bo = Boolean.parseBoolean(s);
         SwingUtilities.invokeLater(() -> {
                     if(bo) {
                         jrbV1Open.setSelected(true);
@@ -772,7 +788,8 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentilatorGUILi
     }
     
     @Override
-    public void notifyV2State(boolean bo) {
+    public void notifyV2State(String s) {
+        boolean bo = Boolean.parseBoolean(s);
         SwingUtilities.invokeLater(() -> {
                     if(bo) {
                         jrbV2Open.setSelected(true);
@@ -784,7 +801,8 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentilatorGUILi
     }
     
     @Override
-    public void notifyV3State(boolean bo) {
+    public void notifyV3State(String s) {
+        boolean bo = Boolean.parseBoolean(s);
         SwingUtilities.invokeLater(() -> {
                     if(bo) {
                         jrbV3Open.setSelected(true);

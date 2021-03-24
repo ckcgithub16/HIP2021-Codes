@@ -75,7 +75,7 @@ public class VentiPiIO extends VentiIO {
         }
     }
     
-    //In psi below. Converted to cm H2O in VentiMachine.java
+    // reads the encoded count from a pressure sensor
     @Override
     int readPressureCount(PressureEnum pe) throws Exception {
         SpiDevice sd = emPressures.get(pe);

@@ -37,11 +37,11 @@ import java.util.concurrent.TimeUnit;
  *
  * @author lee
  */
-public class VentiMachine implements Runnable {
+public class VentiMachine implements VentiUserListener, Runnable {
     final ScheduledExecutorService ses;
-    final ScheduledFuture<?> sf;
+    ScheduledFuture<?> sf;
     
-    final VentilatorGUIListener vgl;
+    final VentiMachineListener vml;
     
     /*
     final GpioController gpio;
@@ -123,10 +123,10 @@ public class VentiMachine implements Runnable {
     
     VentiLogger vl;
     
-    final VentiPiIO vpio; //change to VentiPiIO for real hardware
+    final VentiIO vpio; //change to VentiPiIO for real hardware
     
-    public VentiMachine(VentilatorGUIListener vgl) throws Exception {
-        this.vgl = vgl;
+    public VentiMachine(VentiMachineListener vml) throws Exception {
+        this.vml = vml;
         iAutoState = VentState.INITIALOFF;
         
         /*
@@ -141,14 +141,19 @@ public class VentiMachine implements Runnable {
         sd0 = SpiFactory.getInstance(SpiChannel.CS0, 500000, SpiMode.MODE_0);
         sd1 = SpiFactory.getInstance(SpiChannel.CS1, 500000, SpiMode.MODE_0);
         */
-        vpio = new VentiPiIO();// change to VentiPiIO for real hardware
+        vpio = new VentiIO();// change to VentiPiIO for real hardware
         
         //Instance of VentiLogger & starting the file
         vl = new VentiLogger();
-        vl.start();
         
         ses = Executors.newSingleThreadScheduledExecutor();
         
+    }
+    
+    void start() {
+        stopAuto();
+        vl.start();
+
         //Experiment with different values and document
         sf = ses.scheduleAtFixedRate(this, 0, 25, TimeUnit.MILLISECONDS);
     }
@@ -164,25 +169,25 @@ public class VentiMachine implements Runnable {
         
     //Code below is for automatic ventilator control
     
+    @Override
     public void run() {
         
         // Code for updating GUI with psi values
-        //Changed to VentiPiIO
         try {
-            tankPressure = readPSI(VentiPiIO.PressureEnum.TANK);
-            vgl.notifyP1(tankPressure);
+            // refer to base class VentiIO even if using a class that extends VentiIO
+            tankPressure = readPSI(VentiIO.PressureEnum.TANK);
+            vml.notifyP1(String.format("%.2f", tankPressure));
         }
         catch (Exception e) {
-            vgl.notifyP1("Error");
+            vml.notifyP1("Error");
         }
         
-        //Changed to VentiPiIO
         try {
-            lungPressure = readPSI(VentiPiIO.PressureEnum.LUNG);
-            vgl.notifyP2(lungPressure);
+            lungPressure = readPSI(VentiIO.PressureEnum.LUNG);
+            vml.notifyP2(String.format("%.2f", lungPressure));
         }
         catch (Exception e) {
-            vgl.notifyP2("Error");
+            vml.notifyP2("Error");
         }
         
         //lStateTime respresents the time in a given state
@@ -339,10 +344,9 @@ public class VentiMachine implements Runnable {
         //Sets timing outside of lstateTime & formats data in CSV files
         vl.logData(System.currentTimeMillis(), 
                 new boolean[]{
-                    //Changed to VentiPiIO
-                    vpio.getState(VentiPiIO.ValveEnum.VALVE1),
-                    vpio.getState(VentiPiIO.ValveEnum.VALVE2),
-                    vpio.getState(VentiPiIO.ValveEnum.VALVE3)
+                    vpio.getState(VentiIO.ValveEnum.VALVE1),
+                    vpio.getState(VentiIO.ValveEnum.VALVE2),
+                    vpio.getState(VentiIO.ValveEnum.VALVE3)
                 }, 
                     new float[]{tankPressure, lungPressure});
        
@@ -374,7 +378,7 @@ public class VentiMachine implements Runnable {
     
     void notifyMessageBox(String s) {
         if (!s.equals(lastMessage)) {
-            vgl.notifyMessageBox(s);
+            vml.notifyMessageBox(s);
             lastMessage = s;
         }
     }
@@ -392,8 +396,7 @@ public class VentiMachine implements Runnable {
     
    //Code for reading pressure sensor values
     //Eventually convert to cm of Water
-    //Changed to VentiPiIO
-    float readPSI(VentiPiIO.PressureEnum pe) throws Exception {
+    float readPSI(VentiIO.PressureEnum pe) throws Exception {
         int i = vpio.readPressureCount(pe);
         float f = 5.0f * (i - 1638.0f) / 14746.0f;
         
@@ -494,9 +497,10 @@ public class VentiMachine implements Runnable {
     }
     
     //First checks if the current state is INITIALOFF: if it is, then the automatic cycle begins
+    @Override
     public void runAuto() {
         if(VentState.INITIALOFF == iAutoState) {
-            vgl.notifyValvesEnabled(false);
+            vml.notifyValvesEnabled(Boolean.FALSE.toString());
             setState(VentState.BUILDPRESSURE);
             openV1();
             shutV2();
@@ -504,59 +508,87 @@ public class VentiMachine implements Runnable {
         }
     }
     
+    @Override
     public void stopAuto() {
         setState(VentState.INITIALOFF);
         shutV1();
         shutV2();
         shutV3();
-        vgl.notifyValvesEnabled(true);
+        vml.notifyValvesEnabled(Boolean.TRUE.toString());
     }
     
     //Starts logging values
+    @Override
     public void enableLogger() {
         vl.setEnabled(true);
     }
     //Stops logging values
+    @Override
     public void disableLogger() {
         vl.setEnabled(false);
 
     }
     
-    //Changed to VentiPiIO in the methods below
-
     
+    @Override
     public void openV1() {
-        vpio.openValve(VentiPiIO.ValveEnum.VALVE1);
-        vgl.notifyV1State(true);
+        vpio.openValve(VentiIO.ValveEnum.VALVE1);
+        vml.notifyV1State(Boolean.TRUE.toString());
     }
     
+    @Override
     public void shutV1() {
-        vpio.closeValve(VentiPiIO.ValveEnum.VALVE1);
-        vgl.notifyV1State(false);
+        vpio.closeValve(VentiIO.ValveEnum.VALVE1);
+        vml.notifyV1State(Boolean.FALSE.toString());
     }
     
+    @Override
     public void openV2() {
-        vpio.openValve(VentiPiIO.ValveEnum.VALVE2);
-        vgl.notifyV2State(true);
+        vpio.openValve(VentiIO.ValveEnum.VALVE2);
+        vml.notifyV2State(Boolean.TRUE.toString());
     }
     
+    @Override
     public void shutV2() {
-        vpio.closeValve(VentiPiIO.ValveEnum.VALVE2);
-        vgl.notifyV2State(false);
+        vpio.closeValve(VentiIO.ValveEnum.VALVE2);
+        vml.notifyV2State(Boolean.FALSE.toString());
     }
     
+    @Override
     public void openV3() {
-        vpio.openValve(VentiPiIO.ValveEnum.VALVE3);
-        vgl.notifyV3State(true);
+        vpio.openValve(VentiIO.ValveEnum.VALVE3);
+        vml.notifyV3State(Boolean.TRUE.toString());
     }
     
+    @Override
     public void shutV3() {
-        vpio.closeValve(VentiPiIO.ValveEnum.VALVE3);
-        vgl.notifyV3State(false);
+        vpio.closeValve(VentiIO.ValveEnum.VALVE3);
+        vml.notifyV3State(Boolean.FALSE.toString());
     }
     
+    @Override
     public void shutdown() {
         sf.cancel(false);
         vpio.shutdown();
+    }
+    
+    @Override
+    public void calculateTankPressure(String s1, String s2) {
+        
+    }
+    
+    @Override
+    public void setRPM(String s) {
+        
+    }
+    
+    @Override
+    public void calcMinPIP(String s) {
+        
+    }
+    
+    @Override
+    public void calcMaxPEEP(String s) {
+        
     }
 }
