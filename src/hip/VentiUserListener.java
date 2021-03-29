@@ -39,4 +39,22 @@ public interface VentiUserListener {
     void openV3();
     
     void shutV3();
+    
+    //Methods transfered from machine listener
+    void addPEEP();
+    
+    void addPIP();
+    
+    void addTidalVolume();
+    
+    void addRPM();
+    
+    void minusPEEP();
+    
+    void minusPIP();
+    
+    void minusTidalVolume();
+    
+    void minusRPM();
+    
 }

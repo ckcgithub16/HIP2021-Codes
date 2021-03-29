@@ -11,10 +11,8 @@ package hip;
  * @author lee
  */
 public interface VentiMachineListener {
-    // TODO combine notifyP1 and notifyP2 to reduce event queue overhead
-    void notifyP1(String s);
-    
-    void notifyP2(String s);
+    //Combined notifyP1 and notifyP2 to reduce event queue overhead
+    void notifyPressures(String sTank, String sLung);
     
     //void notifyP3(String s);
     
@@ -34,25 +32,15 @@ public interface VentiMachineListener {
     
     void notifyV3State(String s);
     
-    //Plus and Minus Button control
-    // TODO copy the following into VentiUserListener
-    // TODO rework the following into notify methods
-    void addPEEP();
     
-    void addPIP();
+    //Plus and Minus Button control updating of GUI
+    void notifyPEEP(String s);
+    
+    void notifyPIP(String s);
 
-    void addRPM();
+    void notifyRPM(String s);
 
-    void addTidalVolume();
-
-    void minusPEEP();
-    
-    void minusPIP();
-    
-    void minusRPM();
-    
-    void minusTidalVolume();
-    
+    void notifyTidalVolume(String s); 
   
     
 }

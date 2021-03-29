@@ -123,7 +123,7 @@ public class VentiMachine implements VentiUserListener, Runnable {
     
     VentiLogger vl;
     
-    final VentiIO vpio; //change to VentiPiIO for real hardware
+    final VentiPiIO vpio; //change to VentiPiIO for real hardware
     
     public VentiMachine(VentiMachineListener vml) throws Exception {
         this.vml = vml;
@@ -141,7 +141,7 @@ public class VentiMachine implements VentiUserListener, Runnable {
         sd0 = SpiFactory.getInstance(SpiChannel.CS0, 500000, SpiMode.MODE_0);
         sd1 = SpiFactory.getInstance(SpiChannel.CS1, 500000, SpiMode.MODE_0);
         */
-        vpio = new VentiIO();// change to VentiPiIO for real hardware
+        vpio = new VentiPiIO();// change to VentiPiIO for real hardware
         
         //Instance of VentiLogger & starting the file
         vl = new VentiLogger();
@@ -172,16 +172,22 @@ public class VentiMachine implements VentiUserListener, Runnable {
     @Override
     public void run() {
         
-        // Code for updating GUI with psi values
+        // Code for updating GUI with psi values 
+        
+        //(CHECK THIS LOGIC): Does not identify which sensor is not working\\
         try {
             // refer to base class VentiIO even if using a class that extends VentiIO
             tankPressure = readPSI(VentiIO.PressureEnum.TANK);
-            vml.notifyP1(String.format("%.2f", tankPressure));
+            lungPressure = readPSI(VentiIO.PressureEnum.LUNG);
+            
+            vml.notifyPressures(String.format("%.2f", tankPressure),String.format("%.2f", lungPressure));
         }
         catch (Exception e) {
-            vml.notifyP1("Error");
+            //Adjust
+            vml.notifyPressures("Error", "Error");
         }
         
+        /*           No Longer Needed b/se of unified pressure update
         try {
             lungPressure = readPSI(VentiIO.PressureEnum.LUNG);
             vml.notifyP2(String.format("%.2f", lungPressure));
@@ -189,6 +195,7 @@ public class VentiMachine implements VentiUserListener, Runnable {
         catch (Exception e) {
             vml.notifyP2("Error");
         }
+        */
         
         //lStateTime respresents the time in a given state
         long lStateTime = System.currentTimeMillis() - lStateStartTime;
@@ -425,69 +432,79 @@ public class VentiMachine implements VentiUserListener, Runnable {
        maxPEEP = targetPEEP * (1.10f);
     }
     
-    
+    //Use addPEEP as an example...
     //Checks if PEEP has reached max, adds 0.5 cm H20 if it hasn't, converts PEEP to a string, and displays it on GUI
-    public String addPEEP() {
+    public void addPEEP() {
         if (targetPEEP < 20.0f) {
             targetPEEP += 0.5f;
         }
-        return Float.toString(targetPEEP);
+        calcMaxPEEP();
+        //return Float.toString(targetPEEP);
     }
     
     //Checks if PIP has reached max, adds 1.0 cm H20 if it hasn't, converts PIP to a string, and displays it on GUI
-    public String addPIP() {
+    public void addPIP() {
         if (pip < 30.0f) {
             pip += 1.0f;
         }
-        return Float.toString(pip);
+        calcMinPIP();
+        calculateTankPressure();
+        //return Float.toString(pip);
     }
     
     //Checks if RPM has reached max, adds 1.0/min if it hasn't, converts RPM to a string, and displays it on GUI
-    public String addRPM() {
+    public void addRPM() {
         if (rpm < 15.0f) {
             rpm += 1.0f;
         }    
-        return Float.toString(rpm);
+        calcStateTime();
+        //return Float.toString(rpm);
     }
     
     //Checks if TV has reached max, adds 25 cc if it hasn't, converts TV to a string, and displays it on GUI
-    public String addTidalVolume() {
+    public void addTidalVolume() {
         if (tidalVolume < 650.0f) {
             tidalVolume += 25.0f;
-        }    
-        return Float.toString(tidalVolume);
+        } 
+        calculateTankPressure();
+        //return Float.toString(tidalVolume);
     }
     
     //Checks if PEEP has reached min, subtracts 0.5 cm H20 if it hasn't, converts PEEP to a string, and displays it on GUI
-    public String minusPEEP() {
+    public void minusPEEP() {
         if (targetPEEP > 4.0f) {
             targetPEEP -= 0.5f;
         }
-        return Float.toString(targetPEEP);
+        calcMaxPEEP();
+        //return Float.toString(targetPEEP);
     }
     
     //Checks if PIP has reached min, subtracts 1.0 cm H20 if it hasn't, converts PIP to a string, and displays it on GUI
-    public String minusPIP() {
+    public void minusPIP() {
         if (pip > 13.0f) {
             pip -= 1.0f;
         }
-        return Float.toString(pip);
+        calcMinPIP();
+        calculateTankPressure();
+        //return Float.toString(pip);
     }
     
     //Checks if RPM has reached min, subtracts 1.0/min if it hasn't, converts RPM to a string, and displays it on GUI
-    public String minusRPM() {
+    public void minusRPM() {
         if (rpm > 12.0f) {
             rpm -= 1.0f;
         }
-         return Float.toString(rpm);
+        calcStateTime();
+         //return Float.toString(rpm);
     }
     
     //Checks if TV has reached min, subtracts 25 cc if it hasn't, converts TV to a string, and displays it on GUI
-    public String minusTidalVolume() {
+    public void minusTidalVolume() {
         if (tidalVolume > 300.0f) {
             tidalVolume -= 25.0f;
         }
-        return Float.toString(tidalVolume);
+        calculateTankPressure();
+        //return Float.toString(tidalVolume);
     }
     
     //Change the state
