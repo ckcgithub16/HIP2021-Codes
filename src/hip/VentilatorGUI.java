@@ -615,46 +615,34 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineLis
     }//GEN-LAST:event_jrbV1OpenActionPerformed
 
     private void peepMinusBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_peepMinusBtnActionPerformed
-        // TODO just call minusPEEP over interface
-        // move calculations to VentiMachine functions
-        // TODO don't refer to vm
-        // TODO e.g. vul.minusPEEP()
         vul.minusPEEP();
-        //vm.calcMaxPEEP(); // TODO move to VentiMachine
     }//GEN-LAST:event_peepMinusBtnActionPerformed
 
     private void peepPlusBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_peepPlusBtnActionPerformed
-        // TODO
         vul.addPEEP();
     }//GEN-LAST:event_peepPlusBtnActionPerformed
 
     private void pipPlusBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pipPlusBtnActionPerformed
-        // TODO
         vul.addPIP();
     }//GEN-LAST:event_pipPlusBtnActionPerformed
 
     private void tvMinusBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tvMinusBtnActionPerformed
-        // TODO
         vul.minusTidalVolume();
     }//GEN-LAST:event_tvMinusBtnActionPerformed
 
     private void rpmPlusBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rpmPlusBtnActionPerformed
-        // TODO
         vul.addRPM();
     }//GEN-LAST:event_rpmPlusBtnActionPerformed
 
     private void pipMinusBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pipMinusBtnActionPerformed
-        // TODO
         vul.minusPIP();
     }//GEN-LAST:event_pipMinusBtnActionPerformed
 
     private void rpmMinusBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rpmMinusBtnActionPerformed
-        // TODO
         vul.minusRPM();
     }//GEN-LAST:event_rpmMinusBtnActionPerformed
 
     private void tvPlusBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_tvPlusBtnActionPerformed
-        // TODO
         vul.addTidalVolume();
     }//GEN-LAST:event_tvPlusBtnActionPerformed
 
@@ -696,30 +684,24 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineLis
     }
     
     //Checks if PEEP has reached max, adds 0.5 cm H20 if it hasn't, converts PEEP to a string, and displays it on GUI
-    // TODO move addPEEP to VentiUserListener interface
-    // TODO add notifyPEEP to VentiMachineListener interface
-    // TODO e.g. rework this addPEEP into notifyPEEP -> invokeLater () -> jlP2Count1.setText
     @Override
     public void notifyPEEP(String s) {
         SwingUtilities.invokeLater(() -> jlP2Count1.setText(s));
     }
     
     //Checks if PIP has reached max, adds 1.0 cm H20 if it hasn't, converts PIP to a string, and displays it on GUI
-    // TODO
     @Override
     public void notifyPIP(String s) {
         SwingUtilities.invokeLater(() -> jlP2Count4.setText(s));
     }
     
     //Checks if RPM has reached max, adds 1.0/min if it hasn't, converts RPM to a string, and displays it on GUI
-    // TODO
     @Override
     public void notifyRPM(String s) {
         SwingUtilities.invokeLater(() -> jlP2Count3.setText(s));   
     }
     
     //Checks if TV has reached max, adds 25 cc if it hasn't, converts TV to a string, and displays it on GUI
-    // TODO
     @Override
     public void notifyTidalVolume(String s) {
         SwingUtilities.invokeLater(() -> jlP2Count5.setText(s));    
@@ -730,28 +712,24 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineLis
     
     
     //Checks if PEEP has reached min, subtracts 0.5 cm H20 if it hasn't, converts PEEP to a string, and displays it on GUI
-    // TODO
     @Override
     public void minusPEEP() {
        jlP2Count1.setText(vm.minusPEEP());
     }
     
     //Checks if PIP has reached min, subtracts 1.0 cm H20 if it hasn't, converts PIP to a string, and displays it on GUI
-    // TODO
     @Override
     public void minusPIP() {
         jlP2Count4.setText(vm.minusPIP());
     }
     
     //Checks if RPM has reached min, subtracts 1.0/min if it hasn't, converts RPM to a string, and displays it on GUI
-    // TODO
     @Override
     public void minusRPM() {
         jlP2Count3.setText(vm.minusRPM());
     }
     
     //Checks if TV has reached min, subtracts 25 cc if it hasn't, converts TV to a string, and displays it on GUI
-    // TODO
     @Override
     public void minusTidalVolume() {
         jlP2Count5.setText(vm.minusTidalVolume());
