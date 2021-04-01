@@ -94,6 +94,10 @@ public class VentiPiIO extends VentiIO {
     }
     
     @Override
+    void start() {
+    }
+    
+    @Override
     void shutdown() {
         gpio.shutdown();
     }

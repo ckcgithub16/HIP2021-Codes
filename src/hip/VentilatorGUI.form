@@ -201,7 +201,7 @@
                   <Component id="jlPSI8" min="-2" max="-2" attributes="0"/>
                   <Component id="jlPSI9" min="-2" max="-2" attributes="0"/>
               </Group>
-              <EmptySpace pref="21" max="32767" attributes="0"/>
+              <EmptySpace pref="116" max="32767" attributes="0"/>
           </Group>
       </Group>
     </DimensionLayout>

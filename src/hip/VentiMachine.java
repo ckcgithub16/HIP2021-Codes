@@ -123,7 +123,7 @@ public class VentiMachine implements VentiUserListener, Runnable {
     
     VentiLogger vl;
     
-    final VentiPiIO vpio; //change to VentiPiIO for real hardware
+    final VentiIO vpio; //change to VentiPiIO for real hardware
     
     public VentiMachine(VentiMachineListener vml) throws Exception {
         this.vml = vml;
@@ -141,7 +141,7 @@ public class VentiMachine implements VentiUserListener, Runnable {
         sd0 = SpiFactory.getInstance(SpiChannel.CS0, 500000, SpiMode.MODE_0);
         sd1 = SpiFactory.getInstance(SpiChannel.CS1, 500000, SpiMode.MODE_0);
         */
-        vpio = new VentiPiIO();// change to VentiPiIO for real hardware
+        vpio = new VentiIO();// change to VentiPiIO for real hardware
         
         //Instance of VentiLogger & starting the file
         vl = new VentiLogger();
@@ -156,6 +156,9 @@ public class VentiMachine implements VentiUserListener, Runnable {
 
         //Experiment with different values and document
         sf = ses.scheduleAtFixedRate(this, 0, 25, TimeUnit.MILLISECONDS);
+
+        // start simulation
+        vpio.start();
     }
    
     /*Replace letters with new names as described in class variables (DONE)
@@ -174,11 +177,11 @@ public class VentiMachine implements VentiUserListener, Runnable {
         
         // Code for updating GUI with psi values 
         
-        //(CHECK THIS LOGIC): Does not identify which sensor is not working\\
+        //Does not identify which sensor is not working\\
         try {
             // refer to base class VentiIO even if using a class that extends VentiIO
-            tankPressure = readPSI(VentiIO.PressureEnum.TANK);
-            lungPressure = readPSI(VentiIO.PressureEnum.LUNG);
+            tankPressure = readPressure(VentiIO.PressureEnum.TANK);
+            lungPressure = readPressure(VentiIO.PressureEnum.LUNG);
             
             vml.notifyPressures(String.format("%.2f", tankPressure),String.format("%.2f", lungPressure));
         }
@@ -189,7 +192,7 @@ public class VentiMachine implements VentiUserListener, Runnable {
         
         /*           No Longer Needed b/se of unified pressure update
         try {
-            lungPressure = readPSI(VentiIO.PressureEnum.LUNG);
+            lungPressure = readPressure(VentiIO.PressureEnum.LUNG);
             vml.notifyP2(String.format("%.2f", lungPressure));
         }
         catch (Exception e) {
@@ -401,9 +404,8 @@ public class VentiMachine implements VentiUserListener, Runnable {
        exhaleRefillTime -= (tranThreeTime);
     }
     
-   //Code for reading pressure sensor values
-    //Eventually convert to cm of Water
-    float readPSI(VentiIO.PressureEnum pe) throws Exception {
+   //Code for reading pressure sensor values and converting them to cm H2O
+    float readPressure(VentiIO.PressureEnum pe) throws Exception {
         int i = vpio.readPressureCount(pe);
         float f = 5.0f * (i - 1638.0f) / 14746.0f;
         
@@ -439,7 +441,8 @@ public class VentiMachine implements VentiUserListener, Runnable {
             targetPEEP += 0.5f;
         }
         calcMaxPEEP();
-        //return Float.toString(targetPEEP);
+        
+        vml.notifyPEEP(Float.toString(targetPEEP));
     }
     
     //Checks if PIP has reached max, adds 1.0 cm H20 if it hasn't, converts PIP to a string, and displays it on GUI
@@ -449,7 +452,8 @@ public class VentiMachine implements VentiUserListener, Runnable {
         }
         calcMinPIP();
         calculateTankPressure();
-        //return Float.toString(pip);
+    
+        vml.notifyPIP(Float.toString(pip));
     }
     
     //Checks if RPM has reached max, adds 1.0/min if it hasn't, converts RPM to a string, and displays it on GUI
@@ -458,7 +462,8 @@ public class VentiMachine implements VentiUserListener, Runnable {
             rpm += 1.0f;
         }    
         calcStateTime();
-        //return Float.toString(rpm);
+        
+        vml.notifyRPM(Float.toString(rpm));
     }
     
     //Checks if TV has reached max, adds 25 cc if it hasn't, converts TV to a string, and displays it on GUI
@@ -467,7 +472,8 @@ public class VentiMachine implements VentiUserListener, Runnable {
             tidalVolume += 25.0f;
         } 
         calculateTankPressure();
-        //return Float.toString(tidalVolume);
+        
+        vml.notifyTidalVolume(Float.toString(tidalVolume));
     }
     
     //Checks if PEEP has reached min, subtracts 0.5 cm H20 if it hasn't, converts PEEP to a string, and displays it on GUI
@@ -476,7 +482,8 @@ public class VentiMachine implements VentiUserListener, Runnable {
             targetPEEP -= 0.5f;
         }
         calcMaxPEEP();
-        //return Float.toString(targetPEEP);
+
+        vml.notifyPEEP(Float.toString(targetPEEP));
     }
     
     //Checks if PIP has reached min, subtracts 1.0 cm H20 if it hasn't, converts PIP to a string, and displays it on GUI
@@ -486,7 +493,8 @@ public class VentiMachine implements VentiUserListener, Runnable {
         }
         calcMinPIP();
         calculateTankPressure();
-        //return Float.toString(pip);
+        
+        vml.notifyPIP(Float.toString(pip));
     }
     
     //Checks if RPM has reached min, subtracts 1.0/min if it hasn't, converts RPM to a string, and displays it on GUI
@@ -495,7 +503,8 @@ public class VentiMachine implements VentiUserListener, Runnable {
             rpm -= 1.0f;
         }
         calcStateTime();
-         //return Float.toString(rpm);
+
+        vml.notifyRPM(Float.toString(rpm));        
     }
     
     //Checks if TV has reached min, subtracts 25 cc if it hasn't, converts TV to a string, and displays it on GUI
@@ -504,7 +513,8 @@ public class VentiMachine implements VentiUserListener, Runnable {
             tidalVolume -= 25.0f;
         }
         calculateTankPressure();
-        //return Float.toString(tidalVolume);
+        
+        vml.notifyTidalVolume(Float.toString(tidalVolume));
     }
     
     //Change the state
