@@ -186,7 +186,6 @@ public class VentiMachine implements VentiUserListener, Runnable {
             vml.notifyPressures(String.format("%.2f", tankPressure),String.format("%.2f", lungPressure));
         }
         catch (Exception e) {
-            //Adjust
             vml.notifyPressures("Error", "Error");
         }
         
