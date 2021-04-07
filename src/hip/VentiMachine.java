@@ -316,10 +316,17 @@ public class VentiMachine implements VentiUserListener, Runnable {
                 }
                 else {
                     if(lungPressure <= targetPEEP) {
-                       shutV3();
+                        shutV3();
+                        //To check if PEEP drops below 5 and then comes back up to trigger the PEEP too high error
+                        notifyMessageBox("PEEP dipped too low.\n");
                     }
                     if(tankPressure >= targetTankPressure) {
                        shutV1();
+                    }
+                    //TEST
+                    else{
+                        openV1();
+                        openV3();
                     }
                 }                  
                 break;
