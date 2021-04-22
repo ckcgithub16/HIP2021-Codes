@@ -42,5 +42,5 @@ public interface VentiMachineListener {
 
     void notifyTidalVolume(String s); 
   
-    
+    boolean isReady();
 }

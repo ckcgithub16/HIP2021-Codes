@@ -16,14 +16,6 @@ public interface VentiUserListener {
     
     void stopAuto();
     
-    void calcMaxPEEP(String s);
-    
-    void calcMinPIP(String s);
-    
-    void setRPM(String s);
-
-    void calculateTankPressure(String s1, String s2);
-    
     void enableLogger();
     
     void disableLogger();

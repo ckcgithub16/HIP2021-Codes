@@ -28,6 +28,8 @@ import hip.sim.SpiFactory;
 import hip.sim.SpiMode;
 */
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -41,7 +43,8 @@ public class VentiMachine implements VentiUserListener, Runnable {
     final ScheduledExecutorService ses;
     ScheduledFuture<?> sf;
     
-    final VentiMachineListener vml;
+    final VentiMachineListener vmlGUI;
+    final VentiNetworkLink vnl;
     
     /*
     final GpioController gpio;
@@ -72,8 +75,11 @@ public class VentiMachine implements VentiUserListener, Runnable {
     final float maxPIP = 40.0f;
     float minPIP = 12.0f;
     
-    //Highest safe PEEP value in cm H2O (calculated whenever changed from default)
+    //Highest safe PEEP value in cm H2O (calculated whenever changed from default below)
     float maxPEEP = 5.5f;
+    
+    //Lowest safe PEEP value in cm H2O (calculated whenever changed from default below)
+    float minPEEP = 4.5f;
     
     //Target tank pressure and minimum acceptible tank pressure in cm H2O (calculated whenever changed from default)
     float targetTankPressure = 20.65f;
@@ -123,10 +129,11 @@ public class VentiMachine implements VentiUserListener, Runnable {
     
     VentiLogger vl;
     
-    final VentiIO vpio; //change to VentiPiIO for real hardware
+    final VentiIO vpio;
+    List<VentiMachineListener> lVMLs;
     
-    public VentiMachine(VentiMachineListener vml) throws Exception {
-        this.vml = vml;
+    public VentiMachine(VentiMachineListener vml, boolean boSim) throws Exception {
+        this.vmlGUI = vml;
         iAutoState = VentState.INITIALOFF;
         
         /*
@@ -141,22 +148,41 @@ public class VentiMachine implements VentiUserListener, Runnable {
         sd0 = SpiFactory.getInstance(SpiChannel.CS0, 500000, SpiMode.MODE_0);
         sd1 = SpiFactory.getInstance(SpiChannel.CS1, 500000, SpiMode.MODE_0);
         */
-        vpio = new VentiIO();// change to VentiPiIO for real hardware
+        if(boSim == true) {
+            vpio = new VentiIO();
+        }
+        else {
+            vpio = new VentiPiIO();
+        }
         
         //Instance of VentiLogger & starting the file
         vl = new VentiLogger();
         
         ses = Executors.newSingleThreadScheduledExecutor();
         
+        vnl = new VentiNetworkLink(true);
+        
+        //Add vnl back to enable server
+        lVMLs = Arrays.asList(vmlGUI/*, vnl*/);
     }
     
     void start() {
         stopAuto();
+        
+        //Display initial settings on the GUI
+        notifyPEEP(Float.toString(targetPEEP));
+        notifyPIP(Float.toString(pip));
+        notifyRPM(Float.toString(rpm));
+        notifyTidalVolume(Float.toString(tidalVolume));
+
+        vnl.setListener(this);
+        vnl.start();
+        
         vl.start();
 
         //Experiment with different values and document
-        sf = ses.scheduleAtFixedRate(this, 0, 25, TimeUnit.MILLISECONDS);
-
+        sf = ses.scheduleAtFixedRate(this, 0, 100, TimeUnit.MILLISECONDS);
+        
         // start simulation
         vpio.start();
     }
@@ -175,19 +201,29 @@ public class VentiMachine implements VentiUserListener, Runnable {
     @Override
     public void run() {
         
-        // Code for updating GUI with psi values 
+        // Code for updating GUI with pressure values 
         
-        //Does not identify which sensor is not working\\
+        String sTankPressure;
+        String sLungPressure;
+        //(CHECK THIS LOGIC): Does not identify which sensor is not working\\
         try {
             // refer to base class VentiIO even if using a class that extends VentiIO
             tankPressure = readPressure(VentiIO.PressureEnum.TANK);
             lungPressure = readPressure(VentiIO.PressureEnum.LUNG);
             
-            vml.notifyPressures(String.format("%.2f", tankPressure),String.format("%.2f", lungPressure));
+            sTankPressure = String.format("%.2f", tankPressure);
+            sLungPressure = String.format("%.2f", lungPressure);
+            // vmlGUI.notifyPressures(String.format("%.2f", tankPressure),String.format("%.2f", lungPressure));
         }
         catch (Exception e) {
-            vml.notifyPressures("Error", "Error");
+            //Adjust
+            sTankPressure = "Error";
+            sLungPressure = "Error";
+            // vmlGUI.notifyPressures("Error", "Error");
         }
+        final String sTankFinal = sTankPressure;
+        final String sLungFinal = sLungPressure;
+        lVMLs.forEach(vml -> vml.notifyPressures(sTankFinal, sLungFinal));
         
         /*           No Longer Needed b/se of unified pressure update
         try {
@@ -298,7 +334,7 @@ public class VentiMachine implements VentiUserListener, Runnable {
                 break;
             case EXHALEREFILL:
                 if(lStateTime >= exhaleRefillTime) { 
-                    if((maxPEEP < lungPressure) || (lungPressure < targetPEEP)) {
+                    if((maxPEEP < lungPressure) || (lungPressure < minPEEP)) {
                        shutV3();
                        setState(VentState.FAULT3);
                     }
@@ -315,18 +351,11 @@ public class VentiMachine implements VentiUserListener, Runnable {
                     }
                 }
                 else {
-                    if(lungPressure <= targetPEEP) {
-                        shutV3();
-                        //To check if PEEP drops below 5 and then comes back up to trigger the PEEP too high error
-                        notifyMessageBox("PEEP dipped too low.\n");
+                    if(lungPressure <= minPEEP) {
+                       shutV3();
                     }
                     if(tankPressure >= targetTankPressure) {
                        shutV1();
-                    }
-                    //TEST
-                    else{
-                        openV1();
-                        openV3();
                     }
                 }                  
                 break;
@@ -394,7 +423,7 @@ public class VentiMachine implements VentiUserListener, Runnable {
     
     void notifyMessageBox(String s) {
         if (!s.equals(lastMessage)) {
-            vml.notifyMessageBox(s);
+            lVMLs.forEach(vml -> vml.notifyMessageBox(s));
             lastMessage = s;
         }
     }
@@ -419,7 +448,7 @@ public class VentiMachine implements VentiUserListener, Runnable {
         float g = f * 70.307f;
         return g;
     }
-        
+    
     //Code for Boyle's Law (PV = PV) to determine tank pressures
     public void calculateTankPressure() {
        
@@ -435,92 +464,115 @@ public class VentiMachine implements VentiUserListener, Runnable {
        minPIP = pip - 2.0f;
     }
     
-    //Calculation for MaxPEEP based the fact than too low peep is 90% of target peep (multiply by 1.10)
+    //Calculation for MaxPEEP based the fact that too low peep is 90% of target peep (so I multiply by 1.10 here)
     public void calcMaxPEEP() {
        maxPEEP = targetPEEP * (1.10f);
     }
     
+    //Calculation for minPEEP based on the fact that too low peep is 90% of target peep (multiply by 0.9)
+    public void calcMinPEEP() {
+        minPEEP = targetPEEP * (0.9f);
+    }
+    
     //Use addPEEP as an example...
     //Checks if PEEP has reached max, adds 0.5 cm H20 if it hasn't, converts PEEP to a string, and displays it on GUI
+    @Override
     public void addPEEP() {
         if (targetPEEP < 20.0f) {
             targetPEEP += 0.5f;
         }
         calcMaxPEEP();
-        
-        vml.notifyPEEP(Float.toString(targetPEEP));
+        calcMinPEEP();
+        notifyPEEP(Float.toString(targetPEEP));
+    }
+    
+    void notifyPEEP(String s) {
+        lVMLs.forEach(vml -> vml.notifyPEEP(s));
     }
     
     //Checks if PIP has reached max, adds 1.0 cm H20 if it hasn't, converts PIP to a string, and displays it on GUI
+    @Override
     public void addPIP() {
         if (pip < 30.0f) {
             pip += 1.0f;
         }
         calcMinPIP();
         calculateTankPressure();
+        notifyPIP(Float.toString(pip));
+    }
     
-        vml.notifyPIP(Float.toString(pip));
+    void notifyPIP(String s) {
+        lVMLs.forEach(vml -> vml.notifyPIP(s));
     }
     
     //Checks if RPM has reached max, adds 1.0/min if it hasn't, converts RPM to a string, and displays it on GUI
+    @Override
     public void addRPM() {
         if (rpm < 15.0f) {
             rpm += 1.0f;
         }    
         calcStateTime();
-        
-        vml.notifyRPM(Float.toString(rpm));
+        notifyRPM(Float.toString(rpm));
+    }
+    
+    void notifyRPM(String s) {
+        lVMLs.forEach(vml -> vml.notifyRPM(s));
     }
     
     //Checks if TV has reached max, adds 25 cc if it hasn't, converts TV to a string, and displays it on GUI
+    @Override
     public void addTidalVolume() {
         if (tidalVolume < 650.0f) {
             tidalVolume += 25.0f;
         } 
         calculateTankPressure();
-        
-        vml.notifyTidalVolume(Float.toString(tidalVolume));
+        notifyTidalVolume(Float.toString(tidalVolume));
+    }
+    
+    void notifyTidalVolume(final String s) {
+        lVMLs.forEach(vml -> vml.notifyTidalVolume(s));
     }
     
     //Checks if PEEP has reached min, subtracts 0.5 cm H20 if it hasn't, converts PEEP to a string, and displays it on GUI
+    @Override
     public void minusPEEP() {
         if (targetPEEP > 4.0f) {
             targetPEEP -= 0.5f;
         }
         calcMaxPEEP();
-
-        vml.notifyPEEP(Float.toString(targetPEEP));
+        calcMinPEEP();
+        notifyPEEP(Float.toString(targetPEEP));
     }
     
     //Checks if PIP has reached min, subtracts 1.0 cm H20 if it hasn't, converts PIP to a string, and displays it on GUI
+    @Override
     public void minusPIP() {
         if (pip > 13.0f) {
             pip -= 1.0f;
         }
         calcMinPIP();
         calculateTankPressure();
-        
-        vml.notifyPIP(Float.toString(pip));
+        notifyPIP(Float.toString(pip));
     }
     
     //Checks if RPM has reached min, subtracts 1.0/min if it hasn't, converts RPM to a string, and displays it on GUI
+    @Override
     public void minusRPM() {
         if (rpm > 12.0f) {
             rpm -= 1.0f;
         }
         calcStateTime();
-
-        vml.notifyRPM(Float.toString(rpm));        
+        notifyRPM(Float.toString(rpm));
     }
     
     //Checks if TV has reached min, subtracts 25 cc if it hasn't, converts TV to a string, and displays it on GUI
+    @Override
     public void minusTidalVolume() {
         if (tidalVolume > 300.0f) {
             tidalVolume -= 25.0f;
         }
         calculateTankPressure();
-        
-        vml.notifyTidalVolume(Float.toString(tidalVolume));
+        notifyTidalVolume(Float.toString(tidalVolume));
     }
     
     //Change the state
@@ -533,12 +585,16 @@ public class VentiMachine implements VentiUserListener, Runnable {
     @Override
     public void runAuto() {
         if(VentState.INITIALOFF == iAutoState) {
-            vml.notifyValvesEnabled(Boolean.FALSE.toString());
+            notifyValvesEnabled(Boolean.FALSE.toString());
             setState(VentState.BUILDPRESSURE);
             openV1();
             shutV2();
             shutV3();
         }
+    }
+    
+    void notifyValvesEnabled(String s) {
+        lVMLs.forEach(vml -> vml.notifyValvesEnabled(s));
     }
     
     @Override
@@ -547,7 +603,7 @@ public class VentiMachine implements VentiUserListener, Runnable {
         shutV1();
         shutV2();
         shutV3();
-        vml.notifyValvesEnabled(Boolean.TRUE.toString());
+        notifyValvesEnabled(Boolean.TRUE.toString());
     }
     
     //Starts logging values
@@ -566,37 +622,49 @@ public class VentiMachine implements VentiUserListener, Runnable {
     @Override
     public void openV1() {
         vpio.openValve(VentiIO.ValveEnum.VALVE1);
-        vml.notifyV1State(Boolean.TRUE.toString());
+        notifyV1State(Boolean.TRUE.toString());
     }
     
     @Override
     public void shutV1() {
         vpio.closeValve(VentiIO.ValveEnum.VALVE1);
-        vml.notifyV1State(Boolean.FALSE.toString());
+        notifyV1State(Boolean.FALSE.toString());
+    }
+    
+    void notifyV1State(String s) {
+        lVMLs.forEach(vml -> vml.notifyV1State(s));
     }
     
     @Override
     public void openV2() {
         vpio.openValve(VentiIO.ValveEnum.VALVE2);
-        vml.notifyV2State(Boolean.TRUE.toString());
+        notifyV2State(Boolean.TRUE.toString());
     }
     
     @Override
     public void shutV2() {
         vpio.closeValve(VentiIO.ValveEnum.VALVE2);
-        vml.notifyV2State(Boolean.FALSE.toString());
+        notifyV2State(Boolean.FALSE.toString());
+    }
+    
+    void notifyV2State(String s) {
+        lVMLs.forEach(vml -> vml.notifyV2State(s));
     }
     
     @Override
     public void openV3() {
         vpio.openValve(VentiIO.ValveEnum.VALVE3);
-        vml.notifyV3State(Boolean.TRUE.toString());
+        notifyV3State(Boolean.TRUE.toString());
     }
     
     @Override
     public void shutV3() {
         vpio.closeValve(VentiIO.ValveEnum.VALVE3);
-        vml.notifyV3State(Boolean.FALSE.toString());
+        notifyV3State(Boolean.FALSE.toString());
+    }
+    
+    void notifyV3State(String s) {
+        lVMLs.forEach(vml -> vml.notifyV3State(s));
     }
     
     @Override
@@ -605,23 +673,4 @@ public class VentiMachine implements VentiUserListener, Runnable {
         vpio.shutdown();
     }
     
-    @Override
-    public void calculateTankPressure(String s1, String s2) {
-        
-    }
-    
-    @Override
-    public void setRPM(String s) {
-        
-    }
-    
-    @Override
-    public void calcMinPIP(String s) {
-        
-    }
-    
-    @Override
-    public void calcMaxPEEP(String s) {
-        
-    }
 }

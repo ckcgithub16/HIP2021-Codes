@@ -6,6 +6,10 @@
 package hip;
 
 import javax.swing.SwingUtilities;
+import org.knowm.xchart.XChartPanel;
+import org.knowm.xchart.XYChart;
+import java.util.ArrayList;
+import java.awt.BorderLayout;
 
 /**
  *
@@ -14,21 +18,66 @@ import javax.swing.SwingUtilities;
 public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineListener {
     VentiMachine vm;
     VentiUserListener vul;
+    boolean boReady;
+    
+    //Variables for XChart
+        XYChart xyChart;
+        XChartPanel <XYChart> xcpXYC;
+        
+        ArrayList<Double> aldXData;
+        ArrayList<Double> aldYData;
+        
+        
+        long lLastUpdateTime;
+        
+       
+        
+        long lTimeChartStart;
 
     /**
      * Creates new form HelloWorldJFrame
      */
-    public VentilatorGUI() {
-        initComponents();
+    public VentilatorGUI(boolean boSim) {
+        initGUI();
+        
         try {
-            vm = new VentiMachine(this);
+            vm = new VentiMachine(this, boSim);
             vul = vm;
             vm.start();
         }
         catch (Exception e) {
-            SwingUtilities.invokeLater(()->jlP1Count.setText("Error"));
+            SwingUtilities.invokeLater(()->jlP2Count2.setText("Error"));
             System.err.println("SPI Error");
         }
+    }
+    
+    public VentilatorGUI(VentiUserListener vul) {
+        this.vul = vul;
+        SwingUtilities.invokeLater(() -> initGUI());
+    }
+    
+    
+    void initGUI() {
+        initComponents();
+        setVisible(true);
+        boReady = true;
+        aldXData = new ArrayList<>(1000);
+        aldYData = new ArrayList<>(1000);
+        jpChart.setLayout(new BorderLayout());
+        xyChart = new XYChart(jpChart.getWidth(), jpChart.getHeight());
+        
+        //Need to add actual data in different format?
+        xyChart.addSeries("Test", new double[]{0.0}, new double[]{0.0});
+        xcpXYC = new XChartPanel<>(xyChart);
+        jpChart.add(xcpXYC);
+        
+        
+        lTimeChartStart = System.currentTimeMillis();
+    }
+    
+    @Override
+    public boolean isReady() {
+        return boReady;
     }
 
     /**
@@ -57,7 +106,7 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineLis
         jrbV2Close = new javax.swing.JRadioButton();
         jrbV3Open = new javax.swing.JRadioButton();
         jrbV3Close = new javax.swing.JRadioButton();
-        jlP1Count = new javax.swing.JLabel();
+        jlP2Count2 = new javax.swing.JLabel();
         jlV1 = new javax.swing.JLabel();
         jlV2 = new javax.swing.JLabel();
         jlV3 = new javax.swing.JLabel();
@@ -67,30 +116,34 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineLis
         jrbStop = new javax.swing.JRadioButton();
         jlP4 = new javax.swing.JLabel();
         jlP3 = new javax.swing.JLabel();
-        jlP2Count1 = new javax.swing.JLabel();
-        jlP5 = new javax.swing.JLabel();
+        jlP1Count = new javax.swing.JLabel();
         jlP6 = new javax.swing.JLabel();
         jlP7 = new javax.swing.JLabel();
         jRadioButton1 = new javax.swing.JRadioButton();
         jRadioButton2 = new javax.swing.JRadioButton();
-        jlPSI4 = new javax.swing.JLabel();
-        jlP2Count2 = new javax.swing.JLabel();
-        jlP2Count3 = new javax.swing.JLabel();
-        jlP2Count4 = new javax.swing.JLabel();
+        jlPSI3 = new javax.swing.JLabel();
         jlP2Count5 = new javax.swing.JLabel();
-        peepMinusBtn = new javax.swing.JButton();
-        peepPlusBtn = new javax.swing.JButton();
-        pipPlusBtn = new javax.swing.JButton();
-        tvMinusBtn = new javax.swing.JButton();
-        rpmPlusBtn = new javax.swing.JButton();
-        pipMinusBtn = new javax.swing.JButton();
-        rpmMinusBtn = new javax.swing.JButton();
-        tvPlusBtn = new javax.swing.JButton();
+        jlP2Count4 = new javax.swing.JLabel();
+        jlP2Count1 = new javax.swing.JLabel();
+        jlP2Count3 = new javax.swing.JLabel();
         jlPSI6 = new javax.swing.JLabel();
         jlPSI7 = new javax.swing.JLabel();
         jlPSI8 = new javax.swing.JLabel();
+        peepPlusBtn = new javax.swing.JButton();
+        peepMinusBtn = new javax.swing.JButton();
+        pipPlusBtn = new javax.swing.JButton();
+        tvPlusBtn = new javax.swing.JButton();
+        rpmPlusBtn = new javax.swing.JButton();
+        pipMinusBtn = new javax.swing.JButton();
+        rpmMinusBtn = new javax.swing.JButton();
+        tvMinusBtn = new javax.swing.JButton();
+        jlP8 = new javax.swing.JLabel();
+        jpChart = new javax.swing.JPanel();
+        jlP5 = new javax.swing.JLabel();
+        jPanel5 = new javax.swing.JPanel();
+        jlP9 = new javax.swing.JLabel();
         jlPSI9 = new javax.swing.JLabel();
-        jScrollPane2 = new javax.swing.JScrollPane();
+        jScrollPane3 = new javax.swing.JScrollPane();
         jTextArea1 = new javax.swing.JTextArea();
 
         jToolBar1.setRollover(true);
@@ -193,9 +246,9 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineLis
             }
         });
 
-        jlP1Count.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
-        jlP1Count.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
-        jlP1Count.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+        jlP2Count2.setFont(new java.awt.Font("Courier New", 1, 24)); // NOI18N
+        jlP2Count2.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
+        jlP2Count2.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
         jlV1.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
         jlV1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
@@ -211,7 +264,7 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineLis
 
         jlP1.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
         jlP1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jlP1.setText("TP");
+        jlP1.setText("Tank Pressure");
 
         jlP2.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
         jlP2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
@@ -242,20 +295,15 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineLis
 
         jlP4.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
         jlP4.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jlP4.setText("LP");
+        jlP4.setText("Lung Pressure");
 
         jlP3.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
         jlP3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jlP3.setText("PEEP");
 
-        jlP2Count1.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
-        jlP2Count1.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
-        jlP2Count1.setText("5.0");
-        jlP2Count1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
-
-        jlP5.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
-        jlP5.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jlP5.setText("Tidal Volume");
+        jlP1Count.setFont(new java.awt.Font("Courier New", 1, 24)); // NOI18N
+        jlP1Count.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
+        jlP1Count.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
         jlP6.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
         jlP6.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
@@ -282,42 +330,51 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineLis
             }
         });
 
-        jlPSI4.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
-        jlPSI4.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jlPSI4.setText("cc");
+        jlPSI3.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
+        jlPSI3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jlPSI3.setText("<html>cm H<sub>2</sub>O");
 
-        jlP2Count2.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
-        jlP2Count2.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
-        jlP2Count2.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
-
-        jlP2Count3.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
-        jlP2Count3.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
-        jlP2Count3.setText("12.0");
-        jlP2Count3.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
-
-        jlP2Count4.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
-        jlP2Count4.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
-        jlP2Count4.setText("14.0");
-        jlP2Count4.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
-
-        jlP2Count5.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jlP2Count5.setFont(new java.awt.Font("Courier New", 1, 24)); // NOI18N
         jlP2Count5.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
-        jlP2Count5.setText("500.0");
         jlP2Count5.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
-        peepMinusBtn.setFont(new java.awt.Font("Tahoma", 0, 36)); // NOI18N
-        peepMinusBtn.setText("-");
-        peepMinusBtn.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                peepMinusBtnActionPerformed(evt);
-            }
-        });
+        jlP2Count4.setFont(new java.awt.Font("Courier New", 1, 24)); // NOI18N
+        jlP2Count4.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
+        jlP2Count4.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+
+        jlP2Count1.setFont(new java.awt.Font("Courier New", 1, 24)); // NOI18N
+        jlP2Count1.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
+        jlP2Count1.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+
+        jlP2Count3.setFont(new java.awt.Font("Courier New", 1, 24)); // NOI18N
+        jlP2Count3.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
+        jlP2Count3.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+
+        jlPSI6.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
+        jlPSI6.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jlPSI6.setText("<html>cm H<sub>2</sub>O");
+
+        jlPSI7.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
+        jlPSI7.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jlPSI7.setText("<html>cm H<sub>2</sub>O");
+
+        jlPSI8.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
+        jlPSI8.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jlPSI8.setText("cc");
 
         peepPlusBtn.setFont(new java.awt.Font("Tahoma", 0, 36)); // NOI18N
         peepPlusBtn.setText("+");
         peepPlusBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 peepPlusBtnActionPerformed(evt);
+            }
+        });
+
+        peepMinusBtn.setFont(new java.awt.Font("Tahoma", 0, 36)); // NOI18N
+        peepMinusBtn.setText("-");
+        peepMinusBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                peepMinusBtnActionPerformed(evt);
             }
         });
 
@@ -329,11 +386,11 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineLis
             }
         });
 
-        tvMinusBtn.setFont(new java.awt.Font("Tahoma", 0, 36)); // NOI18N
-        tvMinusBtn.setText("-");
-        tvMinusBtn.addActionListener(new java.awt.event.ActionListener() {
+        tvPlusBtn.setFont(new java.awt.Font("Tahoma", 0, 36)); // NOI18N
+        tvPlusBtn.setText("+");
+        tvPlusBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                tvMinusBtnActionPerformed(evt);
+                tvPlusBtnActionPerformed(evt);
             }
         });
 
@@ -361,25 +418,51 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineLis
             }
         });
 
-        tvPlusBtn.setFont(new java.awt.Font("Tahoma", 0, 36)); // NOI18N
-        tvPlusBtn.setText("+");
-        tvPlusBtn.addActionListener(new java.awt.event.ActionListener() {
+        tvMinusBtn.setFont(new java.awt.Font("Tahoma", 0, 36)); // NOI18N
+        tvMinusBtn.setText("-");
+        tvMinusBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                tvPlusBtnActionPerformed(evt);
+                tvMinusBtnActionPerformed(evt);
             }
         });
 
-        jlPSI6.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
-        jlPSI6.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jlPSI6.setText("<html>cm H<sub>2</sub>O");
+        jlP8.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jlP8.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jlP8.setText("Tidal Volume");
 
-        jlPSI7.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
-        jlPSI7.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jlPSI7.setText("<html>cm H<sub>2</sub>O");
+        jpChart.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
 
-        jlPSI8.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
-        jlPSI8.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jlPSI8.setText("<html>cm H<sub>2</sub>O");
+        javax.swing.GroupLayout jpChartLayout = new javax.swing.GroupLayout(jpChart);
+        jpChart.setLayout(jpChartLayout);
+        jpChartLayout.setHorizontalGroup(
+            jpChartLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
+        jpChartLayout.setVerticalGroup(
+            jpChartLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 225, Short.MAX_VALUE)
+        );
+
+        jlP5.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jlP5.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jlP5.setText("Volume");
+
+        jPanel5.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+
+        javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(jPanel5);
+        jPanel5.setLayout(jPanel5Layout);
+        jPanel5Layout.setHorizontalGroup(
+            jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 457, Short.MAX_VALUE)
+        );
+        jPanel5Layout.setVerticalGroup(
+            jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 225, Short.MAX_VALUE)
+        );
+
+        jlP9.setFont(new java.awt.Font("Arial", 1, 24)); // NOI18N
+        jlP9.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jlP9.setText("Lung Pressure");
 
         jlPSI9.setFont(new java.awt.Font("Arial", 1, 14)); // NOI18N
         jlPSI9.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
@@ -387,108 +470,107 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineLis
 
         jTextArea1.setColumns(20);
         jTextArea1.setRows(5);
-        jScrollPane2.setViewportView(jTextArea1);
+        jScrollPane3.setViewportView(jTextArea1);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(20, 20, 20)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jrbV1Open, javax.swing.GroupLayout.DEFAULT_SIZE, 103, Short.MAX_VALUE)
-                    .addComponent(jrbV2Open, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jrbV3Open, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jrbRun, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jRadioButton1))
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGap(53, 53, 53)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                            .addComponent(jlV2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 40, Short.MAX_VALUE)
-                            .addComponent(jlV1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jlV3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 280, Short.MAX_VALUE)
+                            .addComponent(jlP2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jpChart, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGap(39, 39, 39))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addComponent(jrbV1Open, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(jrbV2Open, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(jrbV3Open, javax.swing.GroupLayout.PREFERRED_SIZE, 103, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                    .addComponent(jlV2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(jlV1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(jlV3, javax.swing.GroupLayout.PREFERRED_SIZE, 40, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                            .addComponent(jrbRun, javax.swing.GroupLayout.PREFERRED_SIZE, 103, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jRadioButton1))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jRadioButton2)
                             .addComponent(jrbV1Close, javax.swing.GroupLayout.PREFERRED_SIZE, 94, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jrbV3Close, javax.swing.GroupLayout.PREFERRED_SIZE, 94, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jrbV2Close, javax.swing.GroupLayout.PREFERRED_SIZE, 94, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jrbStop, javax.swing.GroupLayout.PREFERRED_SIZE, 94, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(36, 36, 36)
-                        .addComponent(jRadioButton2)))
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 434, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jrbStop, javax.swing.GroupLayout.PREFERRED_SIZE, 94, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addGap(130, 130, 130)
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                            .addComponent(jlP6, javax.swing.GroupLayout.PREFERRED_SIZE, 105, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                            .addComponent(jlP3, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                            .addComponent(jlP7, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                        .addGap(56, 56, 56)
-                                        .addComponent(peepMinusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 74, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addGap(291, 291, 291)
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                            .addComponent(rpmMinusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                            .addComponent(pipMinusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                            .addComponent(tvMinusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 71, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                                .addGap(73, 73, 73)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addComponent(jlP2Count1, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                        .addComponent(jlPSI6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                            .addComponent(jlP2Count3, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                            .addGroup(layout.createSequentialGroup()
-                                                .addComponent(jlP2Count4, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                                .addComponent(jlPSI7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                            .addGroup(layout.createSequentialGroup()
-                                                .addComponent(jlP2Count5, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                                .addComponent(jlPSI4)))
-                                        .addGap(0, 0, Short.MAX_VALUE)))
-                                .addGap(18, 18, 18))
-                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                                .addGap(115, 115, 115)
-                                .addComponent(jlP5)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(jlP5, javax.swing.GroupLayout.PREFERRED_SIZE, 249, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(139, 139, 139))
                             .addGroup(layout.createSequentialGroup()
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jlP2, javax.swing.GroupLayout.PREFERRED_SIZE, 220, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(30, 30, 30)))
+                                .addGap(270, 270, 270)
+                                .addComponent(jlP9, javax.swing.GroupLayout.PREFERRED_SIZE, 197, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 257, Short.MAX_VALUE)))))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(27, 27, 27)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                    .addComponent(jlP3, javax.swing.GroupLayout.DEFAULT_SIZE, 100, Short.MAX_VALUE)
+                                    .addComponent(jlP7, javax.swing.GroupLayout.DEFAULT_SIZE, 100, Short.MAX_VALUE)
+                                    .addComponent(jlP6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                            .addComponent(jlP8))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 18, Short.MAX_VALUE)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(peepPlusBtn, javax.swing.GroupLayout.DEFAULT_SIZE, 71, Short.MAX_VALUE)
-                            .addComponent(pipPlusBtn, javax.swing.GroupLayout.DEFAULT_SIZE, 71, Short.MAX_VALUE)
                             .addComponent(tvPlusBtn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(rpmPlusBtn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
-                .addGap(109, 109, 109)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(jlP4, javax.swing.GroupLayout.PREFERRED_SIZE, 61, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jlP1, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                            .addComponent(pipPlusBtn, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(peepPlusBtn, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(rpmPlusBtn, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGap(65, 65, 65))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jlP4, javax.swing.GroupLayout.PREFERRED_SIZE, 184, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jlP1, javax.swing.GroupLayout.PREFERRED_SIZE, 184, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(37, 37, 37)))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jlP2Count5, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jlPSI8, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(32, 32, 32))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jlP2Count4, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                .addComponent(jlP2Count2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(jlP2Count1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 99, Short.MAX_VALUE))
+                            .addComponent(jlP1Count, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jlPSI6, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jlPSI3, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jlPSI7, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jlPSI9, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(jlP2Count3, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jlP1Count, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jlP2Count2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jlPSI8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jlPSI9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(116, Short.MAX_VALUE))
+                    .addComponent(peepMinusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 53, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(pipMinusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 53, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(rpmMinusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 53, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(tvMinusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 53, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGap(88, 88, 88))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(31, 31, 31)
+                .addGap(42, 42, 42)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -500,71 +582,98 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineLis
                             .addComponent(jrbV2Open, javax.swing.GroupLayout.PREFERRED_SIZE, 53, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jlV2, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addComponent(jrbV2Close, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(31, 31, 31)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jrbV3Open, javax.swing.GroupLayout.PREFERRED_SIZE, 53, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jlV3, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jrbV3Close, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(56, 56, 56)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jrbRun, javax.swing.GroupLayout.PREFERRED_SIZE, 53, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jrbStop, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                        .addComponent(jlP2Count1, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addComponent(jlPSI6, javax.swing.GroupLayout.PREFERRED_SIZE, 61, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addComponent(peepPlusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGap(32, 32, 32)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                        .addComponent(jlP2Count4, javax.swing.GroupLayout.PREFERRED_SIZE, 61, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addComponent(jlPSI7, javax.swing.GroupLayout.PREFERRED_SIZE, 61, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addComponent(pipPlusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 66, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jlP1, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jlPSI8, javax.swing.GroupLayout.PREFERRED_SIZE, 61, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jlP2Count2, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGap(23, 23, 23)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jlP4, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jlPSI9, javax.swing.GroupLayout.PREFERRED_SIZE, 61, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jlP1Count, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                        .addGap(30, 30, 30)
+                        .addGap(15, 15, 15)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                .addComponent(rpmMinusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addComponent(jlP7, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addComponent(jlP2Count3, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(rpmPlusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(33, 33, 33)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                                    .addComponent(tvPlusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jlP5, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(tvMinusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jlP2Count5, javax.swing.GroupLayout.PREFERRED_SIZE, 66, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addComponent(jlPSI4, javax.swing.GroupLayout.PREFERRED_SIZE, 61, javax.swing.GroupLayout.PREFERRED_SIZE)))))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jlP3, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(peepMinusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 70, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(34, 34, 34)
+                                .addComponent(jrbV3Open, javax.swing.GroupLayout.PREFERRED_SIZE, 53, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(jlV3, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jrbV3Close, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(43, 43, 43)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(pipMinusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 67, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jlP6, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 20, Short.MAX_VALUE)
-                .addComponent(jlP2, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jRadioButton1)
-                        .addComponent(jRadioButton2))
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 165, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(15, 15, 15))
+                            .addComponent(jrbRun, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jrbStop, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGap(29, 29, 29)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jRadioButton1)
+                            .addComponent(jRadioButton2))
+                        .addGap(60, 60, 60)
+                        .addComponent(jlP2, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jScrollPane3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jlP9, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addGap(16, 16, 16)
+                                        .addComponent(jlPSI7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addGap(17, 17, 17))
+                                    .addComponent(jlP1Count, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jlP1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addGap(18, 18, 18)
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                            .addComponent(jlP4, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                            .addComponent(jlP2Count2, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addGap(35, 35, 35)
+                                        .addComponent(jlPSI6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addGap(74, 74, 74)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                        .addComponent(jlPSI3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addGap(58, 58, 58)
+                                        .addComponent(jlPSI9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addGap(41, 41, 41))
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                .addComponent(peepPlusBtn)
+                                                .addComponent(jlP3, javax.swing.GroupLayout.PREFERRED_SIZE, 45, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                            .addComponent(jlP2Count1, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                            .addComponent(peepMinusBtn))
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                            .addGroup(layout.createSequentialGroup()
+                                                .addGap(26, 26, 26)
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                                    .addComponent(pipPlusBtn, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                    .addComponent(jlP2Count4, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                    .addComponent(pipMinusBtn, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                            .addGroup(layout.createSequentialGroup()
+                                                .addGap(35, 35, 35)
+                                                .addComponent(jlP6, javax.swing.GroupLayout.PREFERRED_SIZE, 44, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                        .addGap(23, 23, 23)))
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(rpmPlusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 53, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(jlP7, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                        .addComponent(rpmMinusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 57, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(jlP2Count3, javax.swing.GroupLayout.PREFERRED_SIZE, 57, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addGap(15, 15, 15)
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                                .addComponent(tvMinusBtn, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                .addComponent(jlP2Count5, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                .addComponent(jlP8, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addComponent(tvPlusBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addGap(35, 35, 35)
+                                        .addComponent(jlPSI8))))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jpChart, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(jlP5, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(36, 36, 36)))))
+                .addGap(124, 124, 124))
         );
 
         pack();
@@ -648,12 +757,42 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineLis
 
     //Tank pressure
     @Override
-    public void notifyPressures(String sTank, String sLung) {
-        SwingUtilities.invokeLater(() -> {jlP2Count2.setText(sTank);
-        jlP1Count.setText(sLung);        
-        });
-        
-    }
+     public void notifyPressures(String sTank, String sLung) {
+         long lTime = System.currentTimeMillis();
+
+         Double dTime = (lTime - lTimeChartStart) / 1000.0;
+         try {
+             Double dLungPressure = Double.parseDouble(sLung);
+             aldXData.add(dTime);
+             while(aldXData.size() > 400) {
+                 aldXData.remove(0);
+             }
+             aldYData.add(dLungPressure);
+             while(aldYData.size() > 400) {
+                 aldYData.remove(0);
+             }
+         }
+         catch(Exception e) {
+         }
+
+         // set threshold for time difference to update GUI to desired GUI
+         // update period minus a margin of at most half of a machine period
+         // e.g. 100ms GUI update minus half of 10ms machine period
+         if((lTime - lLastUpdateTime) >= 95) {
+             final ArrayList<Double> aldx = new ArrayList(aldXData);
+             final ArrayList<Double> aldy = new ArrayList(aldYData);
+             SwingUtilities.invokeLater(() -> {
+                 jlP1Count.setText(sTank);
+                 jlP2Count2.setText(sLung);
+                 xyChart.updateXYSeries("Test", aldx, aldy, null);
+                 xcpXYC.repaint();
+             });
+             
+             //lLastUpdateTime does not have a value
+             lLastUpdateTime = lTime;
+
+         }
+     }
     
     //Lung pressure
     //@Override
@@ -707,34 +846,34 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineLis
         SwingUtilities.invokeLater(() -> jlP2Count5.setText(s));    
     }
     
-    
-    /* Shouldn't need to change, just DELETE
-    
-    
     //Checks if PEEP has reached min, subtracts 0.5 cm H20 if it hasn't, converts PEEP to a string, and displays it on GUI
-    @Override
+    // TODO
+    /* @Override
     public void minusPEEP() {
        jlP2Count1.setText(vm.minusPEEP());
-    }
+    } */
     
     //Checks if PIP has reached min, subtracts 1.0 cm H20 if it hasn't, converts PIP to a string, and displays it on GUI
-    @Override
+    // TODO
+    /* @Override
     public void minusPIP() {
         jlP2Count4.setText(vm.minusPIP());
-    }
+    } */
     
     //Checks if RPM has reached min, subtracts 1.0/min if it hasn't, converts RPM to a string, and displays it on GUI
-    @Override
+    // TODO
+    /* @Override
     public void minusRPM() {
         jlP2Count3.setText(vm.minusRPM());
-    }
+    } */
     
     //Checks if TV has reached min, subtracts 25 cc if it hasn't, converts TV to a string, and displays it on GUI
-    @Override
+    // TODO
+    /* @Override
     public void minusTidalVolume() {
         jlP2Count5.setText(vm.minusTidalVolume());
-    }
-    */
+    } */
+    
     
     @Override
     public void notifyValvesEnabled(String s) {
@@ -791,7 +930,7 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineLis
     /**
      * @param args the command line arguments
      */
-    public static void main(String args[]) {
+    public static void main(String ss[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
@@ -823,7 +962,12 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineLis
         //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new VentilatorGUI().setVisible(true));
+        boolean boSim = false;
+        if(ss.length >= 1 && ss[0].equals("-sim")) {
+            boSim = true;
+        }
+        final boolean boSimFinal = boSim;
+        java.awt.EventQueue.invokeLater(() -> new VentilatorGUI(boSimFinal).setVisible(true));
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -836,10 +980,11 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineLis
     private javax.swing.ButtonGroup buttonGroup3;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel5;
     private javax.swing.JRadioButton jRadioButton1;
     private javax.swing.JRadioButton jRadioButton2;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JTextArea jTextArea1;
     private javax.swing.JToolBar jToolBar1;
     private javax.swing.JLabel jlP1;
@@ -855,7 +1000,9 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineLis
     private javax.swing.JLabel jlP5;
     private javax.swing.JLabel jlP6;
     private javax.swing.JLabel jlP7;
-    private javax.swing.JLabel jlPSI4;
+    private javax.swing.JLabel jlP8;
+    private javax.swing.JLabel jlP9;
+    private javax.swing.JLabel jlPSI3;
     private javax.swing.JLabel jlPSI6;
     private javax.swing.JLabel jlPSI7;
     private javax.swing.JLabel jlPSI8;
@@ -863,6 +1010,7 @@ public class VentilatorGUI extends javax.swing.JFrame implements VentiMachineLis
     private javax.swing.JLabel jlV1;
     private javax.swing.JLabel jlV2;
     private javax.swing.JLabel jlV3;
+    private javax.swing.JPanel jpChart;
     public javax.swing.JRadioButton jrbRun;
     private javax.swing.JRadioButton jrbStop;
     private javax.swing.JRadioButton jrbV1Close;
